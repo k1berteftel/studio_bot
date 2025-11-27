@@ -1,0 +1,2 @@
+from dialogs.forms_dialog.consult_dialog.dialog import consult_dialog
+from dialogs.forms_dialog.diagnostic_dialog.dialog import diagnostic_dialog
