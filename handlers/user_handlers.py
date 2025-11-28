@@ -1,6 +1,7 @@
 from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.context import FSMContext
 from aiogram_dialog import DialogManager, StartMode
 
 from database.action_data_class import DataInteraction
@@ -11,7 +12,7 @@ user_router = Router()
 
 
 @user_router.message(CommandStart())
-async def start_dialog(msg: Message, dialog_manager: DialogManager, session: DataInteraction, command: CommandObject):
+async def start_dialog(msg: Message, dialog_manager: DialogManager, session: DataInteraction, command: CommandObject, state: FSMContext):
     args = command.args
     #referral = None
     link = None
@@ -51,11 +52,45 @@ async def start_dialog(msg: Message, dialog_manager: DialogManager, session: Dat
             except Exception:
                 ...
             counter += 1
+    member = await msg.bot.get_chat_member(
+        chat_id=-1002577435324,
+        user_id=msg.from_user.id
+    )
+    if not member.is_member:
+        await state.update_data(switcher=args)
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text='🔗Подписаться', url='https://t.me/+fzFaVHkNHJ4yNTQy')],
+                [InlineKeyboardButton(text='✅Проверить', callback_data='check_sub')]
+            ]
+        )
+        await msg.answer('🙏Чтобы продолжить пользоваться ботом пожалуйста подпишитесь на канал', reply_markup=keyboard)
+        return
     if args:
         if args == 'diagnostic':
             await dialog_manager.start(state=startSG.diagnostic, mode=StartMode.RESET_STACK)
         elif args == 'article':
-            await dialog_manager.start(state=startSG.consult_package, mode=StartMode.RESET_STACK)
+            await dialog_manager.start(state=startSG.article, mode=StartMode.RESET_STACK)
     else:
         await dialog_manager.start(state=startSG.start, mode=StartMode.RESET_STACK)
 
+
+@user_router.callback_query(F.data == 'check_sub')
+async def check_sub(clb: CallbackQuery, dialog_manager: DialogManager, state: FSMContext):
+    member = await clb.bot.get_chat_member(
+        chat_id=-1002577435324,
+        user_id=clb.from_user.id
+    )
+    if not member.is_member:
+        await clb.answer('❗️Вы все еще не подписались на канал')
+        return
+    data = await state.get_data()
+    switcher = data.get('switcher')
+    if switcher:
+        if switcher == 'diagnostic':
+            await dialog_manager.start(state=startSG.diagnostic, mode=StartMode.RESET_STACK)
+        elif switcher == 'article':
+            await dialog_manager.start(state=startSG.article, mode=StartMode.RESET_STACK)
+    else:
+        await dialog_manager.start(state=startSG.start, mode=StartMode.RESET_STACK)
+    await state.clear()
