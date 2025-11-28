@@ -56,7 +56,7 @@ async def start_dialog(msg: Message, dialog_manager: DialogManager, session: Dat
         chat_id=-1002577435324,
         user_id=msg.from_user.id
     )
-    if not member.is_member:
+    if member.status == 'left':
         await state.update_data(switcher=args)
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
@@ -81,7 +81,7 @@ async def check_sub(clb: CallbackQuery, dialog_manager: DialogManager, state: FS
         chat_id=-1002577435324,
         user_id=clb.from_user.id
     )
-    if not member.is_member:
+    if member.status == 'left':
         await clb.answer('❗️Вы все еще не подписались на канал')
         return
     data = await state.get_data()
